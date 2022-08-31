@@ -50,7 +50,11 @@ namespace ExcelExport {
 		public override string ColumnType => "string";
 
 		public override JToken ConvertJson(IRow row) {
-			return ConvertValue(row);
+			var strValue = ConvertValue(row);
+			if(string.IsNullOrEmpty(strValue)) {
+				return null;
+			}
+			return strValue;
 		}
 
 		public override string ConvertValue(IRow row) {
