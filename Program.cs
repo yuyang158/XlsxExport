@@ -66,6 +66,7 @@ namespace ExcelExport {
 
 		private static string m_exportScope = "c";
 		private static string m_serverFileAppend = "";
+		private static string m_exportDirectory = "../Export";
 
 		private static void ConvertExcelFile(string excelFilePath) {
 			int currentExportRow = 0;
@@ -107,7 +108,7 @@ namespace ExcelExport {
 						if(structures.Count == 0) {
 							continue;
 						}
-						string exportFilePath = $"../Export/{sheetName}{m_serverFileAppend}.tsv";
+						string exportFilePath = $"{m_exportDirectory}/{sheetName}{m_serverFileAppend}.tsv";
 						Console.WriteLine($"Export {sheetName} to {exportFilePath} contains row : {sheet.LastRowNum - 2}");
 						using (var fileStream = new FileStream(exportFilePath, FileMode.Create))
 						using (var writer = new StreamWriter(fileStream)) {

@@ -24,6 +24,7 @@ namespace ExcelExport {
 		}
 
 		public abstract string ConvertValue(IRow row);
+		public abstract JToken ConvertJson(IRow row);
 	}
 
 
@@ -31,6 +32,11 @@ namespace ExcelExport {
 		public ColorTypeStructure(int columnIndex, string columnName) : base(columnIndex, columnName) {
 		}
 		public override string ColumnType => "color";
+
+		public override JToken ConvertJson(IRow row) {
+			return ConvertValue(row);
+		}
+
 		public override string ConvertValue(IRow row) {
 			var cell = row.GetCell(m_columnIndex);
 			return cell.StringCellValue;
@@ -42,6 +48,10 @@ namespace ExcelExport {
 		}
 
 		public override string ColumnType => "string";
+
+		public override JToken ConvertJson(IRow row) {
+			return ConvertValue(row);
+		}
 
 		public override string ConvertValue(IRow row) {
 			var cell = row.GetCell(m_columnIndex);
@@ -75,6 +85,19 @@ namespace ExcelExport {
 		}
 		public override string ColumnType => "number";
 
+		public override JToken ConvertJson(IRow row) {
+			var strValue = ConvertValue(row);
+			if(string.IsNullOrEmpty(strValue)) {
+				return null;
+			}
+
+			if(int.TryParse(strValue, out var intValue)) {
+				return intValue;
+			}
+			var cell = row.GetCell(m_columnIndex);
+			return cell.NumericCellValue;
+		}
+
 		public override string ConvertValue(IRow row) {
 			var cell = row.GetCell(m_columnIndex);
 			if (cell == null || cell.CellType == CellType.Blank) {
@@ -89,6 +112,10 @@ namespace ExcelExport {
 		public BooleanTypeStructure(int columnIndex, string columnName) : base(columnIndex, columnName) {
 		}
 		public override string ColumnType => "boolean";
+
+		public override JToken ConvertJson(IRow row) {
+			return ConvertValue(row) == "1";
+		}
 
 		public override string ConvertValue(IRow row) {
 			var cell = row.GetCell(m_columnIndex);
@@ -113,6 +140,10 @@ namespace ExcelExport {
 		}
 		public override string ColumnType => "link";
 
+		public override JToken ConvertJson(IRow row) {
+			throw new System.Exception("link type can not be included in a complex type.");
+		}
+
 		public override string ConvertValue(IRow row) {
 			var cell = row.GetCell(m_columnIndex);
 			if (cell == null || cell.CellType == CellType.Blank) {
@@ -131,6 +162,10 @@ namespace ExcelExport {
 		public LinksTypeStructure(int columnIndex, string columnName) : base(columnIndex, columnName) {
 		}
 		public override string ColumnType => "links";
+
+		public override JToken ConvertJson(IRow row) {
+			throw new System.Exception("links type can not be included in a complex type.");
+		}
 
 		public override string ConvertValue(IRow row) {
 			var cell = row.GetCell(m_columnIndex);
@@ -168,6 +203,10 @@ namespace ExcelExport {
 			}
 			return "";
 		}
+
+		public override JToken ConvertJson(IRow row) {
+			throw new System.Exception("translate type can not be included in a complex type.");
+		}
 	}
 
 	public abstract class ComplexTypeStructure : ITypeStructure {
@@ -200,7 +239,16 @@ namespace ExcelExport {
 
 			JObject jobject = new JObject();
 			foreach (var columnIndex in m_columnIndeise) {
-				jobject.Add(columnIndex.ColumnName, columnIndex.ConvertValue(row));
+				var simpleType = columnIndex as SimpleTypeStructure;
+				var value = simpleType.ConvertJson(row);
+				if(value == null) {
+					continue;
+				}
+				jobject.Add(columnIndex.ColumnName, value);
+			}
+
+			if(!jobject.HasValues) {
+				return "";
 			}
 
 			return jobject.ToString(Newtonsoft.Json.Formatting.None);
@@ -217,16 +265,17 @@ namespace ExcelExport {
 				throw new System.Exception("No valid columns");
 			}
 
-			List<string> values = new List<string>();
+			var array = new JArray();
 			foreach (var columnIndex in m_columnIndeise) {
-				var val = columnIndex.ConvertValue(row);
-				if (string.IsNullOrEmpty(val)) {
+				var simpleType = columnIndex as SimpleTypeStructure;
+				var val = simpleType.ConvertJson(row);
+				if(val == null) {
 					continue;
 				}
-				values.Add(val);
+				array.Add(val);
 			}
 
-			return new JArray(values).ToString(Newtonsoft.Json.Formatting.None);
+			return array.ToString(Newtonsoft.Json.Formatting.None);
 		}
 	}
 
