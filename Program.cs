@@ -4,6 +4,8 @@ using NPOI.XSSF.UserModel;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 
 namespace ExcelExport {
 	class Program {
@@ -59,6 +61,20 @@ namespace ExcelExport {
 			foreach (string excelFilePath in excelFiles) {
 				ConvertExcelFile(excelFilePath);
 			}
+
+			var type = typeof(IPostExportCheck);
+			var types = AppDomain.CurrentDomain.GetAssemblies()
+				.SelectMany(s => s.GetTypes())
+				.Where(p => type.IsAssignableFrom(p));
+
+			foreach (var t in types) {
+				if(t.IsInterface) {
+					continue;
+				}
+				var checkInstance = Activator.CreateInstance(t) as IPostExportCheck;
+				checkInstance.Check();
+			}
+
 			Console.ForegroundColor = ConsoleColor.Green;
 			Console.WriteLine("Press any key to continue.");
 			Console.ReadKey();
@@ -167,9 +183,6 @@ namespace ExcelExport {
 						}
 					}
 				}
-
-				IPostExportCheck check = new ExtendCheck();
-				check.Check();
 			}
 			catch (Exception e) {
 				Console.ForegroundColor = ConsoleColor.Red;
