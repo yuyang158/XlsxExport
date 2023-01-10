@@ -31,21 +31,26 @@ namespace ExcelExport {
 				var checkContent = item.Value as JObject;
 
 				var columnNameArray = checkContent["Columns"] as JArray;
-				var assetPrefix = checkContent["Prefix"].ToString();
-				foreach (var columnName in columnNameArray) {
-					foreach (var configPair in config) {
+				var assetPrefixArray = checkContent["Prefix"] as JArray;
+				for( int i = 0; i < columnNameArray.Count; i++ ) {
+					var columnName = columnNameArray[i].ToString();
+					var assetPrefix = assetPrefixArray[i].ToString();
+					foreach( var configPair in config ) {
 						var configRow = configPair.Value as JObject;
 						var cellContent = configRow[columnName.ToString()];
-						if (cellContent.Type == JTokenType.String) {
+						if( cellContent.Type == JTokenType.String ) {
 							var assetPath = cellContent.ToString();
 							TestAssetPathExist(assetPrefix, assetPath);
 						}
-						else if (cellContent.Type == JTokenType.Array) {
-							foreach (var assetPath in cellContent) {
+						else if( cellContent.Type == JTokenType.Array ) {
+							foreach( var assetPath in cellContent ) {
 								TestAssetPathExist(assetPrefix, assetPath.ToString());
 							}
 						}
 					}
+				}
+				foreach (var columnName in columnNameArray) {
+					
 				}
 			}
 		}

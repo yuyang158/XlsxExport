@@ -250,6 +250,9 @@ namespace ExcelExport {
 			else if (typeCell.StringCellValue == "color") {
 				return new ColorTypeStructure(columnIndex, columnName);
 			}
+			else if( typeCell.StringCellValue == "json" ) {
+				return new JsonTypeStructure(columnIndex, columnName);
+			}
 			else if (typeCell.StringCellValue == "int" || typeCell.StringCellValue == "number") {
 				return new NumberTypeStructure(columnIndex, columnName);
 			}

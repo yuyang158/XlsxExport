@@ -43,6 +43,31 @@ namespace ExcelExport {
 		}
 	}
 
+	public class JsonTypeStructure : SimpleTypeStructure {
+		public JsonTypeStructure(int columnIndex, string columnName) : base(columnIndex, columnName) {
+		}
+
+		public override string ColumnType => "json";
+
+		public override JToken ConvertJson(IRow row) {
+			var cell = row.GetCell(m_columnIndex);
+			if(cell == null || cell.CellType == CellType.Blank) {
+				return null;
+			}
+
+			return cell.StringCellValue;
+		}
+
+		public override string ConvertValue(IRow row) {
+			var cell = row.GetCell(m_columnIndex);
+			if( cell == null || cell.CellType == CellType.Blank ) {
+				return string.Empty;
+			}
+
+			return cell.StringCellValue;
+		}
+	}
+
 	public class StringTypeStructure : SimpleTypeStructure {
 		public StringTypeStructure(int columnIndex, string columnName) : base(columnIndex, columnName) {
 		}
