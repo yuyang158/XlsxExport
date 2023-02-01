@@ -47,10 +47,19 @@ namespace ExcelExport {
 			return false;
 		}
 
+		private static void PressAnyKeyToContinue() {
+			Console.ForegroundColor = ConsoleColor.Green;
+			Console.WriteLine("Press any key to continue.");
+			Console.ReadKey();
+		}
+
 		static void Main() {
 			var excelFiles = JArray.Parse(File.ReadAllText("./Config/Export.json"));
 			foreach( string excelFilePath in excelFiles ) {
-				ConvertExcelFile(excelFilePath);
+				if( !ConvertExcelFile(excelFilePath) ) {
+					PressAnyKeyToContinue();
+					return;
+				}
 			}
 
 			Console.WriteLine();
@@ -59,7 +68,10 @@ namespace ExcelExport {
 			m_exportScope = "s";
 			m_serverFileAppend = "_Server";
 			foreach( string excelFilePath in excelFiles ) {
-				ConvertExcelFile(excelFilePath);
+				if(!ConvertExcelFile(excelFilePath)) {
+					PressAnyKeyToContinue();
+					return;
+				}
 			}
 
 			var type = typeof(IPostExportCheck);
@@ -75,16 +87,14 @@ namespace ExcelExport {
 				checkInstance.Check();
 			}
 
-			Console.ForegroundColor = ConsoleColor.Green;
-			Console.WriteLine("Press any key to continue.");
-			Console.ReadKey();
+			PressAnyKeyToContinue();
 		}
 
 		private static string m_exportScope = "c";
 		private static string m_serverFileAppend = "";
 		private static string m_exportDirectory = "../Export";
 
-		private static void ConvertExcelFile(string excelFilePath) {
+		private static bool ConvertExcelFile(string excelFilePath) {
 			int currentExportRow = 0;
 			var exportColumnName = "";
 			Console.ForegroundColor = ConsoleColor.White;
@@ -157,9 +167,7 @@ namespace ExcelExport {
 								}
 
 								if( idDuplicateCheck.Contains(id) ) {
-									Console.ForegroundColor = ConsoleColor.Red;
-									Console.WriteLine($"Id duplicate row ：{row.RowNum}, id : {id}");
-									return;
+									throw new Exception($"Id duplicate row ：{row.RowNum}, id : {id}");
 								}
 
 								for( int structureIndex = 0; structureIndex < structures.Count; structureIndex++ ) {
@@ -196,7 +204,9 @@ namespace ExcelExport {
 				Console.ForegroundColor = ConsoleColor.Red;
 				Console.WriteLine($"Error occurred while export row : {currentExportRow}, {exportColumnName}");
 				Console.WriteLine(e.Message);
+				return false;
 			}
+			return true;
 		}
 
 		private static void BuildStructure(IRow nameRow, IRow typeRow, IRow clientServerScopeRow, List<int> exportColumnIndeies, out List<ITypeStructure> structures, out Dictionary<string, string> translates) {
