@@ -97,13 +97,16 @@ namespace ExcelExport {
 		private static bool ConvertExcelFile(string excelFilePath) {
 			int currentExportRow = 0;
 			var exportColumnName = "";
+			var sheetName = "";
 			Console.ForegroundColor = ConsoleColor.White;
 			Console.WriteLine($"Open xlsx file: {excelFilePath}.");
 			try {
 				using( var stream = new FileStream($"../{excelFilePath}", FileMode.Open) ) {
+					currentExportRow = 0;
+					exportColumnName = "";
 					XSSFWorkbook workbook = new XSSFWorkbook(stream);
 					for( int i = 0; i < workbook.NumberOfSheets; i++ ) {
-						var sheetName = workbook.GetSheetName(i);
+						sheetName = workbook.GetSheetName(i);
 						if( sheetName.StartsWith("ignore", StringComparison.InvariantCultureIgnoreCase) ) {
 							continue;
 						}
@@ -202,7 +205,7 @@ namespace ExcelExport {
 			}
 			catch( Exception e ) {
 				Console.ForegroundColor = ConsoleColor.Red;
-				Console.WriteLine($"Error occurred while export row : {currentExportRow}, {exportColumnName}");
+				Console.WriteLine($"Error occurred while export row : {sheetName}, {currentExportRow}, {exportColumnName}");
 				Console.WriteLine(e.Message);
 				return false;
 			}
@@ -217,6 +220,10 @@ namespace ExcelExport {
 			foreach( var index in exportColumnIndeies ) {
 				var type = typeRow.GetCell(index);
 				var name = nameRow.GetCell(index).StringCellValue;
+				var csCell = clientServerScopeRow.GetCell(index);
+				if( csCell  == null || csCell.CellType == CellType.Blank) {
+					throw new Exception("C,S row is empty。");
+				}
 				var clientServerScope = clientServerScopeRow.GetCell(index).StringCellValue;
 				if( !clientServerScope.Contains(m_exportScope) ) {
 					continue;

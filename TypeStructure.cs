@@ -34,11 +34,18 @@ namespace ExcelExport {
 		public override string ColumnType => "color";
 
 		public override JToken ConvertJson(IRow row) {
-			return ConvertValue(row);
+			var val = ConvertValue(row);
+			if(string.IsNullOrEmpty(val)) {
+				return null;
+			}
+			return val;
 		}
 
 		public override string ConvertValue(IRow row) {
 			var cell = row.GetCell(m_columnIndex);
+			if(cell == null || cell.CellType == CellType.Blank) {
+				return null;
+			}
 			return cell.StringCellValue;
 		}
 	}
