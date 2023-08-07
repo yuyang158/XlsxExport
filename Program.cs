@@ -49,8 +49,8 @@ namespace ExcelExport {
 
 		private static void PressAnyKeyToContinue() {
 			Console.ForegroundColor = ConsoleColor.Green;
-			Console.WriteLine("Press any key to continue.");
-			Console.ReadKey();
+			// Console.WriteLine("Press any key to continue.");
+			// Console.ReadKey();
 		}
 
 		static void Main() {
@@ -232,11 +232,11 @@ namespace ExcelExport {
 				ITypeStructure simpleType;
 				var classType = false;
 				if( ClassTypeCheck(name, out var key, out var field) ) {
-					simpleType = TranslateSimpleType(translates, index, type, field);
+					simpleType = TranslateSimpleType(translates, index, type.StringCellValue, field);
 					classType = true;
 				}
 				else {
-					simpleType = TranslateSimpleType(translates, index, type, name);
+					simpleType = TranslateSimpleType(translates, index, type.StringCellValue, name);
 					key = name;
 				}
 
@@ -251,7 +251,7 @@ namespace ExcelExport {
 					structures.Add(complexType);
 				}
 				else if( ArrayTypeCheck(nameRow, name, index) ) {
-					if( type.StringCellValue == "link" ) {
+					if( type.StringCellValue.StartsWith("links") ) {
 						complexType = new JsonArrayTypeStructure(name);
 					}
 					else {
@@ -268,33 +268,37 @@ namespace ExcelExport {
 			}
 		}
 
-		private static ITypeStructure TranslateSimpleType(Dictionary<string, string> translates, int columnIndex, ICell typeCell, string columnName) {
-			if( typeCell.StringCellValue == "string" ) {
+		private static ITypeStructure TranslateSimpleType(Dictionary<string, string> translates, int columnIndex, string cellValue, string columnName) {
+			if( cellValue == "string" ) {
 				return new StringTypeStructure(columnIndex, columnName);
 			}
-			else if( typeCell.StringCellValue == "color" ) {
+			else if( cellValue == "color" ) {
 				return new ColorTypeStructure(columnIndex, columnName);
 			}
-			else if( typeCell.StringCellValue == "json" ) {
+			else if( cellValue == "json" ) {
 				return new JsonTypeStructure(columnIndex, columnName);
-			}
-			else if( typeCell.StringCellValue == "int" || typeCell.StringCellValue == "number" ) {
+			}	
+			else if( cellValue == "int" || cellValue == "number" ) {
 				return new NumberTypeStructure(columnIndex, columnName);
 			}
-			else if( typeCell.StringCellValue == "bool" || typeCell.StringCellValue == "boolean" ) {
+			else if( cellValue == "bool" || cellValue == "boolean" ) {
 				return new BooleanTypeStructure(columnIndex, columnName);
 			}
-			else if( typeCell.StringCellValue == "translate" ) {
+			else if( cellValue == "translate" ) {
 				return new TranslateTypeStructure(columnIndex, columnName, translates);
 			}
-			else if( typeCell.StringCellValue == "link" ) {
-				return new LinkTypeStructure(columnIndex, columnName);
-			}
-			else if( typeCell.StringCellValue == "links" ) {
-				return new LinksTypeStructure(columnIndex, columnName);
-			}
 			else {
-				throw new Exception("Unsupport type : " + typeCell.StringCellValue);
+				if( cellValue.StartsWith("link_") ) {
+					var type = cellValue.Substring(5);
+					var subTypeStructure = TranslateSimpleType(translates, columnIndex, type, columnName);
+					return new LinkTypeStructure(columnIndex, columnName, (SimpleTypeStructure) subTypeStructure);
+				}
+				else if( cellValue.StartsWith("links_") ) {
+					var type = cellValue.Substring(6);
+					var subTypeStructure = TranslateSimpleType(translates, columnIndex, type, columnName);
+					return new LinksTypeStructure(columnIndex, columnName, (SimpleTypeStructure) subTypeStructure);
+				}
+				throw new Exception("Unsupport type : " + cellValue);
 			}
 		}
 	}

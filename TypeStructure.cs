@@ -140,6 +140,10 @@ namespace ExcelExport {
 				return string.Empty;
 			}
 
+			if( cell.CellType == CellType.Formula && cell.CachedFormulaResultType == CellType.String) {
+				return cell.StringCellValue;
+			}
+
 			return cell.NumericCellValue.ToString();
 		}
 	}
@@ -172,49 +176,33 @@ namespace ExcelExport {
 	}
 
 	public class LinkTypeStructure : SimpleTypeStructure {
-		public LinkTypeStructure(int columnIndex, string columnName) : base(columnIndex, columnName) {
+		private SimpleTypeStructure m_subTypeStructure;
+		public LinkTypeStructure(int columnIndex, string columnName, SimpleTypeStructure typeStructure) : base(columnIndex, columnName) {
+			m_subTypeStructure = typeStructure;
 		}
 		public override string ColumnType => "link";
 
 		public override JToken ConvertJson(IRow row) {
-			throw new System.Exception("link type can not be included in a complex type.");
+			return m_subTypeStructure.ConvertJson(row);
 		}
 
 		public override string ConvertValue(IRow row) {
-			var cell = row.GetCell(m_columnIndex);
-			if (cell == null || cell.CellType == CellType.Blank) {
-				return "";
-			}
-
-			if (cell.CellType == CellType.String || cell.CellType == CellType.Formula) {
-				return cell.StringCellValue;
-			}
-			else {
-				return cell.NumericCellValue.ToString();
-			}
+			return m_subTypeStructure.ConvertValue(row);
 		}
 	}
 	public class LinksTypeStructure : SimpleTypeStructure {
-		public LinksTypeStructure(int columnIndex, string columnName) : base(columnIndex, columnName) {
+		private SimpleTypeStructure m_subTypeStructure;
+		public LinksTypeStructure(int columnIndex, string columnName, SimpleTypeStructure typeStructure) : base(columnIndex, columnName) {
+			m_subTypeStructure = typeStructure;
 		}
 		public override string ColumnType => "links";
 
 		public override JToken ConvertJson(IRow row) {
-			throw new System.Exception("links type can not be included in a complex type.");
+			return m_subTypeStructure.ConvertJson(row);
 		}
 
 		public override string ConvertValue(IRow row) {
-			var cell = row.GetCell(m_columnIndex);
-			if (cell == null || cell.CellType == CellType.Blank) {
-				return "";
-			}
-
-			if (cell.CellType == CellType.String || cell.CellType == CellType.Formula) {
-				return cell.StringCellValue;
-			}
-			else {
-				return cell.NumericCellValue.ToString();
-			}
+			return m_subTypeStructure.ConvertValue(row);
 		}
 	}
 
