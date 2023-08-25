@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 
 namespace ExcelExport {
 	class Program {
@@ -172,6 +171,9 @@ namespace ExcelExport {
 								if( idDuplicateCheck.Contains(id) ) {
 									throw new Exception($"Id duplicate row ：{row.RowNum}, id : {id}");
 								}
+								else {
+									idDuplicateCheck.Add(id);
+								}
 
 								for( int structureIndex = 0; structureIndex < structures.Count; structureIndex++ ) {
 									var structure = structures[structureIndex];
@@ -205,7 +207,7 @@ namespace ExcelExport {
 			}
 			catch( Exception e ) {
 				Console.ForegroundColor = ConsoleColor.Red;
-				Console.WriteLine($"Error occurred while export row : {sheetName}, {currentExportRow}, {exportColumnName}");
+				Console.WriteLine($"Error occurred while export row : {sheetName}, {currentExportRow}, {exportColumnName}, {e.Message}");
 				Console.WriteLine(e.Message);
 				return false;
 			}
