@@ -18,7 +18,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>C:\git\XiaoiceIslandUnity\Doc\ExportRelease\</OutputPath>
+    <OutputPath>..\..\svn\landlord\Doc\ExportRelease\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -72,10 +72,8 @@
     <Compile Include="TypeStructure.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Config\I18n.json" />
     <None Include="app.config" />
-    <Content Include="Config\AssetPath.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="Config\Export.json" />
     <None Include="Config\ExtendRelation.json" />
     <None Include="packages.config" />

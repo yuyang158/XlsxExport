@@ -48,8 +48,8 @@ namespace ExcelExport {
 
 		private static void PressAnyKeyToContinue() {
 			Console.ForegroundColor = ConsoleColor.Green;
-			// Console.WriteLine("Press any key to continue.");
-			// Console.ReadKey();
+			Console.WriteLine("Press any key to continue.");
+			Console.ReadKey();
 		}
 
 		static void Main() {
@@ -100,7 +100,34 @@ namespace ExcelExport {
 			Console.ForegroundColor = ConsoleColor.White;
 			Console.WriteLine($"Open xlsx file: {excelFilePath}.");
 			try {
-				using( var stream = new FileStream($"../{excelFilePath}", FileMode.Open) ) {
+				var i18nConfig = JObject.Parse(File.ReadAllText("Config/I18n.json"));
+				var languageSupport = i18nConfig.GetValue("SupportLang") as JArray;
+
+				var languages = new string[languageSupport.Count];
+				var stringTypes = new string[languageSupport.Count];
+				for (int l = 0; l < languageSupport.Count; l++) {
+					languages[l] = languageSupport[l].ToString();
+					stringTypes[l] = "string";
+				}
+				var keyRow = string.Join("\t", languages);
+				var typeRowString = string.Join("\t", stringTypes);
+
+				Dictionary<string, List<string>> translateText = new Dictionary<string, List<string>>(4096);
+				foreach (var translateLine in File.ReadAllLines("../i18n/i18n.tsv")) {
+					if(string.IsNullOrEmpty(translateLine)) {
+						break;
+					}
+					var keyAndLanguageTexts = translateLine.Split('\t');
+					var key = keyAndLanguageTexts[0];
+					var texts = new List<string>(keyAndLanguageTexts.Skip(1));
+					if(translateText.ContainsKey(key)) {
+						Console.WriteLine("Exist Key : " + key);
+						continue;
+					}
+					translateText.Add(key, texts);
+				}
+
+				using ( var stream = new FileStream($"../{excelFilePath}", FileMode.Open) ) {
 					currentExportRow = 0;
 					exportColumnName = "";
 					XSSFWorkbook workbook = new XSSFWorkbook(stream);
@@ -195,12 +222,20 @@ namespace ExcelExport {
 						string exportI18nFilePath = $"../Export/{sheetName}{m_serverFileAppend}_i18n.tsv";
 						using( var fileStream = new FileStream(exportI18nFilePath, FileMode.Create) )
 						using( var writer = new StreamWriter(fileStream) ) {
-							writer.WriteLine("id\tcn");
-							writer.WriteLine("string\tstring");
+							writer.WriteLine($"id\t{keyRow}");
+							writer.WriteLine($"string\t{typeRowString}");
 
+							Console.ForegroundColor = ConsoleColor.Yellow;
 							foreach( var t in translates ) {
+								if(translateText.TryGetValue(t.Key, out var translate)) {
+									var tranlatedLanguage = translate.Skip(1);
+									writer.WriteLine($"{t.Key}\t{t.Value}\t{string.Join("\t", tranlatedLanguage)}");
+									continue;
+								}
+								Console.WriteLine("Not found i18n key ：" + t.Key);
 								writer.WriteLine($"{t.Key}\t{t.Value}");
 							}
+							Console.ForegroundColor = ConsoleColor.White;
 						}
 					}
 				}
