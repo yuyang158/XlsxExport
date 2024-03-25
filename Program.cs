@@ -227,7 +227,7 @@ namespace ExcelExport {
 
 							Console.ForegroundColor = ConsoleColor.Yellow;
 							foreach( var t in translates ) {
-								if(translateText.TryGetValue(t.Key, out var translate)) {
+								if(translateText.TryGetValue($"{sheetName}:{t.Key}", out var translate)) {
 									var tranlatedLanguage = translate.Skip(1);
 									writer.WriteLine($"{t.Key}\t{t.Value}\t{string.Join("\t", tranlatedLanguage)}");
 									continue;
