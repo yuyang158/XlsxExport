@@ -35,7 +35,7 @@ namespace ExcelExport {
 
 		public override JToken ConvertJson(IRow row) {
 			var val = ConvertValue(row);
-			if(string.IsNullOrEmpty(val)) {
+			if (string.IsNullOrEmpty(val)) {
 				return null;
 			}
 			return val;
@@ -43,7 +43,7 @@ namespace ExcelExport {
 
 		public override string ConvertValue(IRow row) {
 			var cell = row.GetCell(m_columnIndex);
-			if(cell == null || cell.CellType == CellType.Blank) {
+			if (cell == null || cell.CellType == CellType.Blank) {
 				return null;
 			}
 			return cell.StringCellValue;
@@ -58,7 +58,7 @@ namespace ExcelExport {
 
 		public override JToken ConvertJson(IRow row) {
 			var cell = row.GetCell(m_columnIndex);
-			if(cell == null || cell.CellType == CellType.Blank) {
+			if (cell == null || cell.CellType == CellType.Blank) {
 				return null;
 			}
 
@@ -67,7 +67,7 @@ namespace ExcelExport {
 
 		public override string ConvertValue(IRow row) {
 			var cell = row.GetCell(m_columnIndex);
-			if( cell == null || cell.CellType == CellType.Blank ) {
+			if (cell == null || cell.CellType == CellType.Blank) {
 				return string.Empty;
 			}
 
@@ -83,7 +83,7 @@ namespace ExcelExport {
 
 		public override JToken ConvertJson(IRow row) {
 			var strValue = ConvertValue(row);
-			if(string.IsNullOrEmpty(strValue)) {
+			if (string.IsNullOrEmpty(strValue)) {
 				return null;
 			}
 			return strValue;
@@ -95,24 +95,30 @@ namespace ExcelExport {
 				return string.Empty;
 			}
 
+			var ret = string.Empty;
 			if (cell.CellType == CellType.Numeric) {
-				return cell.NumericCellValue.ToString();
+				ret = cell.NumericCellValue.ToString();
 			}
 			else if (cell.CellType == CellType.Formula) {
 				if (cell.CachedFormulaResultType == CellType.String) {
-					return cell.StringCellValue;
+					ret = cell.StringCellValue;
 				}
 				else if (cell.CachedFormulaResultType == CellType.Numeric) {
-					return cell.NumericCellValue.ToString();
+					ret =  cell.NumericCellValue.ToString();
 				}
 				else {
-					return cell.StringCellValue;
+					ret = cell.StringCellValue;
 				}
 			}
 			else if (cell.CellType == CellType.String) {
-				return cell.StringCellValue;
+				ret = cell.StringCellValue;
 			}
-			return cell.ToString();
+			else {
+				ret = cell.ToString();
+			}
+
+			ret = ret.Trim();
+			return ret;
 		}
 	}
 
@@ -123,12 +129,12 @@ namespace ExcelExport {
 
 		public override JToken ConvertJson(IRow row) {
 			var strValue = ConvertValue(row);
-			if(string.IsNullOrEmpty(strValue)) {
+			if (string.IsNullOrEmpty(strValue)) {
 				return null;
 			}
 
-			if(int.TryParse(strValue, out var intValue)) {
-				return intValue;
+			if (float.TryParse(strValue, out var val)) {
+				return val;
 			}
 			var cell = row.GetCell(m_columnIndex);
 			return cell.NumericCellValue;
@@ -140,10 +146,16 @@ namespace ExcelExport {
 				return string.Empty;
 			}
 
-			if( cell.CellType == CellType.Formula && cell.CachedFormulaResultType == CellType.String) {
+			if (cell.CellType == CellType.Formula && cell.CachedFormulaResultType == CellType.String) {
 				return cell.StringCellValue;
 			}
 
+			if (cell.CellType == CellType.String) {
+				if (!float.TryParse(cell.StringCellValue, out var val)) {
+					throw new System.Exception($"Cell value {cell.StringCellValue} can not convert to number");
+				}
+				return cell.StringCellValue;
+			}
 			return cell.NumericCellValue.ToString();
 		}
 	}
@@ -265,13 +277,13 @@ namespace ExcelExport {
 			foreach (var columnIndex in m_columnIndeise) {
 				var simpleType = columnIndex as SimpleTypeStructure;
 				var value = simpleType.ConvertJson(row);
-				if(value == null) {
+				if (value == null) {
 					continue;
 				}
 				jobject.Add(columnIndex.ColumnName, value);
 			}
 
-			if(!jobject.HasValues) {
+			if (!jobject.HasValues) {
 				return "";
 			}
 
@@ -293,7 +305,7 @@ namespace ExcelExport {
 			foreach (var columnIndex in m_columnIndeise) {
 				var simpleType = columnIndex as SimpleTypeStructure;
 				var val = simpleType.ConvertJson(row);
-				if(val == null) {
+				if (val == null) {
 					continue;
 				}
 				array.Add(val);
