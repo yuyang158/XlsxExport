@@ -114,26 +114,28 @@ namespace ExcelExport {
 
 				Dictionary<string, List<string>> translateText = new Dictionary<string, List<string>>(4096);
 				foreach (var translateLine in File.ReadAllLines("../i18n/i18n.tsv")) {
-					if(string.IsNullOrEmpty(translateLine)) {
+					if (string.IsNullOrEmpty(translateLine)) {
 						break;
 					}
 					var keyAndLanguageTexts = translateLine.Split('\t');
 					var key = keyAndLanguageTexts[0];
 					var texts = new List<string>(keyAndLanguageTexts.Skip(1));
-					if(translateText.ContainsKey(key)) {
+					if (translateText.ContainsKey(key)) {
 						Console.WriteLine("Exist Key : " + key);
 						continue;
 					}
 					translateText.Add(key, texts);
 				}
+				File.Copy($"../{excelFilePath}", $"../{excelFilePath}.bak", true);
+				excelFilePath = $"../{excelFilePath}.bak";
 
-				using ( var stream = new FileStream($"../{excelFilePath}", FileMode.Open) ) {
+				using (var stream = new FileStream(excelFilePath, FileMode.Open)) {
 					currentExportRow = 0;
 					exportColumnName = "";
 					XSSFWorkbook workbook = new XSSFWorkbook(stream);
-					for( int i = 0; i < workbook.NumberOfSheets; i++ ) {
+					for (int i = 0; i < workbook.NumberOfSheets; i++) {
 						sheetName = workbook.GetSheetName(i);
-						if( sheetName.StartsWith("ignore", StringComparison.InvariantCultureIgnoreCase) ) {
+						if (sheetName.StartsWith("ignore", StringComparison.InvariantCultureIgnoreCase)) {
 							continue;
 						}
 						Console.WriteLine($"Export sheet : {sheetName}");
@@ -144,14 +146,14 @@ namespace ExcelExport {
 						var clientServerScopeRow = sheet.GetRow(3);
 
 						List<int> exportColumnIndeies = new List<int>();
-						for( int columnIndex = 0; columnIndex < nameRow.LastCellNum; columnIndex++ ) {
+						for (int columnIndex = 0; columnIndex < nameRow.LastCellNum; columnIndex++) {
 							var cell = nameRow.GetCell(columnIndex);
-							if( cell == null || cell.CellType == CellType.Blank ) {
+							if (cell == null || cell.CellType == CellType.Blank) {
 								continue;
 							}
 
-							if( cell.CellType == CellType.String ) {
-								if( cell.StringCellValue.StartsWith("ignore", StringComparison.InvariantCultureIgnoreCase) ) {
+							if (cell.CellType == CellType.String) {
+								if (cell.StringCellValue.StartsWith("ignore", StringComparison.InvariantCultureIgnoreCase)) {
 									continue;
 								}
 
@@ -160,16 +162,16 @@ namespace ExcelExport {
 						}
 
 						BuildStructure(nameRow, typeRow, clientServerScopeRow, exportColumnIndeies, out var structures, out var translates);
-						if( structures.Count == 0 ) {
+						if (structures.Count == 0) {
 							continue;
 						}
 						string exportFilePath = $"{m_exportDirectory}/{sheetName}{m_serverFileAppend}.tsv";
 						Console.WriteLine($"Export {sheetName} to {exportFilePath} contains row : {sheet.LastRowNum - 2}");
-						using( var fileStream = new FileStream(exportFilePath, FileMode.Create) )
-						using( var writer = new StreamWriter(fileStream) ) {
+						using (var fileStream = new FileStream(exportFilePath, FileMode.Create))
+						using (var writer = new StreamWriter(fileStream)) {
 							string[] names = new string[structures.Count];
 							string[] types = new string[structures.Count];
-							for( int structureIndex = 0; structureIndex < structures.Count; structureIndex++ ) {
+							for (int structureIndex = 0; structureIndex < structures.Count; structureIndex++) {
 								var structure = structures[structureIndex];
 								names[structureIndex] = structure.ColumnName;
 								types[structureIndex] = structure.ColumnType;
@@ -181,30 +183,30 @@ namespace ExcelExport {
 							string[] values = new string[structures.Count];
 							int ignoreHeaderRowCount = 0;
 							HashSet<string> idDuplicateCheck = new HashSet<string>();
-							foreach( IRow row in sheet ) {
-								if( ignoreHeaderRowCount < 4 ) {
+							foreach (IRow row in sheet) {
+								if (ignoreHeaderRowCount < 4) {
 									ignoreHeaderRowCount++;
 									continue;
 								}
-								if( row == null || row.Cells.Count == 0 ) {
+								if (row == null || row.Cells.Count == 0) {
 									continue;
 								}
 								currentExportRow = row.RowNum;
 								var id = structures[0].ConvertValue(row);
-								if( string.IsNullOrEmpty(id) ) {
+								if (string.IsNullOrEmpty(id)) {
 									continue;
 								}
 
-								if( idDuplicateCheck.Contains(id) ) {
+								if (idDuplicateCheck.Contains(id)) {
 									throw new Exception($"Id duplicate row ：{row.RowNum}, id : {id}");
 								}
 								else {
 									idDuplicateCheck.Add(id);
 								}
 
-								for( int structureIndex = 0; structureIndex < structures.Count; structureIndex++ ) {
+								for (int structureIndex = 0; structureIndex < structures.Count; structureIndex++) {
 									var structure = structures[structureIndex];
-									if( structure is TranslateTypeStructure ) {
+									if (structure is TranslateTypeStructure) {
 										var translateStructure = structure as TranslateTypeStructure;
 										translateStructure.ID = id;
 									}
@@ -215,19 +217,19 @@ namespace ExcelExport {
 							}
 						}
 
-						if( translates.Count == 0 ) {
+						if (translates.Count == 0) {
 							continue;
 						}
 
 						string exportI18nFilePath = $"../Export/{sheetName}{m_serverFileAppend}_i18n.tsv";
-						using( var fileStream = new FileStream(exportI18nFilePath, FileMode.Create) )
-						using( var writer = new StreamWriter(fileStream) ) {
+						using (var fileStream = new FileStream(exportI18nFilePath, FileMode.Create))
+						using (var writer = new StreamWriter(fileStream)) {
 							writer.WriteLine($"id\t{keyRow}");
 							writer.WriteLine($"string\t{typeRowString}");
 
 							Console.ForegroundColor = ConsoleColor.Yellow;
-							foreach( var t in translates ) {
-								if(translateText.TryGetValue($"{sheetName}:{t.Key}", out var translate)) {
+							foreach (var t in translates) {
+								if (translateText.TryGetValue($"{sheetName}:{t.Key}", out var translate)) {
 									var tranlatedLanguage = translate.Skip(1);
 									writer.WriteLine($"{t.Key}\t{t.Value}\t{string.Join("\t", tranlatedLanguage)}");
 									continue;
@@ -240,12 +242,15 @@ namespace ExcelExport {
 					}
 				}
 			}
-			catch( Exception e ) {
+			catch (Exception e) {
 				Console.ForegroundColor = ConsoleColor.Red;
-				Console.WriteLine($"Error occurred while export row : {sheetName}, {currentExportRow}, {exportColumnName}, {e.Message}");
+				Console.WriteLine($"Error occurred while export sheet : {sheetName}, row : {currentExportRow}, column : {exportColumnName}, {e.Message}");
 				Console.WriteLine(e.Message);
 				return false;
 			}
+			finally {
+				File.Delete(excelFilePath);
+            }
 			return true;
 		}
 
